@@ -27,19 +27,18 @@
  */
 class Robot: public frc::SampleRobot {
 
-	bool squaredInputs = 0;
+	//bool squaredInputs = 0;
 	frc::RobotDrive myRobot { 3, 2, 1, 0 }; // robot drive system
-	frc::Joystick stickL {0}; // only joystick
-	frc::Joystick stickR {1};
+	frc::Joystick stickL {1}; // only joystick
+	frc::Joystick stickR {2};
 	frc::Joystick gamePad {0};
 	frc::SendableChooser<std::string> chooser;
 	const std::string autoNameDefault = "Default";
-	const std::string autoNameCustom = "My Auto";
 	frc::Encoder *E0;
-	frc::DriverStation *ds;
+	frc::Encoder *E1;
+	const std::string autoNameCustom = "My Auto";
 
-
-
+frc::DriverStation *ds;
 
 public:
 	Robot() {
@@ -54,14 +53,25 @@ public:
 		E0->SetReverseDirection(false);
 		E0->SetSamplesToAverage(7);
 		E0->Reset();
-	}
+
+		E1 = new Encoder(2,3,true,Encoder::EncodingType::k4X);
+		E1->SetMaxPeriod(.1);
+		E1->SetMinRate(10);
+		E1->SetDistancePerPulse(5);
+		E1->SetReverseDirection(false);
+		E1->SetSamplesToAverage(7);
+		E1->Reset();
+
+	}//End Public Robot
 
 	void RobotInit() {
 		chooser.AddDefault(autoNameDefault, autoNameDefault);
 		chooser.AddObject(autoNameCustom, autoNameCustom);
 		frc::SmartDashboard::PutData("Auto Modes", &chooser);
 		E0->Reset();
-	}
+		E1->Reset();
+
+	}//End robotInit
 
 	/*
 	 * This autonomous (along with the chooser code above) shows how to select
@@ -86,21 +96,23 @@ public:
 			myRobot.Drive(-0.25, 0.5); // spin at half speed
 			frc::Wait(2.0);                // for 2 seconds
 			myRobot.Drive(0.0, 0.0);  // stop robot
-		} else {
+		}//End if
+		else {
 			// Default Auto goes here
 			std::cout << "Running default Autonomous" << std::endl;
 			myRobot.SetSafetyEnabled(false);
-			myRobot.Drive(-0.25, 0.5); // drive forwards half speed
-			frc::Wait(2.0);                // for 2 seconds
+			myRobot.Drive(-0.25, 0.5);  // drive forwards half speed
+			frc::Wait(2.0);            // for 2 seconds
 			myRobot.Drive(0.0, 0.0);  // stop robot
-		}
-	}
+		}//End else
+	}//End Autonomous
 
 
 	 //Runs the motors with arcade steering.
 
 	void OperatorControl() override {
 		char str[1000];
+		char gstr[1000];
 		myRobot.SetSafetyEnabled(true);
 		while (IsOperatorControl() && IsEnabled()) {
 			double d1;
@@ -108,23 +120,45 @@ public:
 			SmartDashboard::PutNumber("Rate", d1);
 			SmartDashboard::PutNumber("Distance", E0->GetDistance());
 			SmartDashboard::PutBoolean("Alive", true);
-			std::sprintf(str, "%d, \n", d1);  //sprintf(str, "%d. \n", d1);
+			std::sprintf(str, "%d, \n", d1);
 						DriverStation::ReportError(str);
 
-			// drive with arcade style (use right stick)
+			double d2;
+			d2=E1->GetRate();
+			SmartDashboard::PutNumber("Rate1", d2);
+			SmartDashboard::PutNumber("Distance1", E1->GetDistance());
+			SmartDashboard::PutBoolean("Alive1", true);
+			std::sprintf(gstr, "%d, \n", d2);
+						DriverStation::ReportError(gstr);
+
+			int State;
+			State = 1;
+
+					switch (State){
+						case 1:
+							if(gamePad.GetRawButton(1)){
+								myRobot.TankDrive(0.25, 0.25);
+								State = 2;
+							}//End if
+							else{
+								myRobot.TankDrive(gamePad, 5, gamePad, 1);
+							}//End else
+							break;
+					}//End switch
+
 			//myRobot.TankDrive(stickR, stickL, 1);
 			myRobot.TankDrive(gamePad, 5, gamePad, 1);
 
 			// wait for a motor update time
 			frc::Wait(0.005);
-		}
-	}
+		}//End OperatorControl while
+	}//End OperatorControl
 
 	 //Runs during test mode
 
 	void Test() override {
 
-	}
-};
+	}//End Test
+};//End class robot
 
 START_ROBOT_CLASS(Robot)
